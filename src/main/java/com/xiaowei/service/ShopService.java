@@ -5,6 +5,7 @@ import com.xiaowei.entity.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -35,8 +36,12 @@ public class ShopService {
 
     public Shop createShop(Shop shop, Long creatorId) {
         shop.setId(creatorId);
+        shop.setStatus(DataStatus.OK.getName());
+        shop.setCreatedAt(new Date());
+        shop.setUpdatedAt(new Date());
         long shopId = shopMapper.insert(shop);
         shop.setId(shopId);
+
         return shop;
     }
 
@@ -48,6 +53,7 @@ public class ShopService {
         if (!Objects.equals(shopInDataBase.getOwnerUserId(), userId)) {
             throw HttpException.forbidden("无权访问！");
         }
+        shop.setUpdatedAt(new Date());
         shopMapper.updateByPrimaryKey(shop);
         return shop;
     }
@@ -61,7 +67,10 @@ public class ShopService {
             throw HttpException.forbidden("无权访问！");
         }
         shopInDataBase.setStatus(DataStatus.DELETED.getName());
+        shopInDataBase.setUpdatedAt(new Date());
         shopMapper.updateByPrimaryKey(shopInDataBase);
         return shopInDataBase;
     }
+
+
 }

@@ -22,7 +22,7 @@ import static java.net.HttpURLConnection.*;
 public class AuthIntegrationTest extends AbstractIntegrationTest {
     @Test
     public void loginLogoutTest() throws JsonProcessingException {
-        String sessionId = loginAndGetCookie();
+        String sessionId = loginAndGetCookie().cookie;
 
         //带者cookie访问/api/status，处于登陆状态
         String statusResponse = doHttpRequest("/api/status", true, null, sessionId).body;

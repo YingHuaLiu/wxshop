@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xiaowei.XiaoweiApplication;
 import com.xiaowei.entity.Goods;
 import com.xiaowei.entity.Response;
+import com.xiaowei.entity.Shop;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.ClassicConfiguration;
 import org.junit.jupiter.api.Assertions;
@@ -41,7 +42,23 @@ public class GoodsIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     public void testCreateGoods() throws JsonProcessingException {
-        String cookie = loginAndGetCookie();
+        UserLoginResponse userLoginResponse = loginAndGetCookie();
+
+        Shop shop = new Shop();
+        shop.setName("我的微信店铺");
+        shop.setDescription("我的小店开张啦");
+        shop.setImgUrl("http://url");
+        HttpResponse shopResponse = doHttpRequest("/api/v1/shop",
+                false,
+                shop,
+                userLoginResponse.cookie);
+
+        Response<Shop> shopInResponse = objectMapper.readValue(shopResponse.body, new TypeReference<Response<Shop>>() {
+        });
+        Assertions.assertEquals(SC_CREATED, shopResponse.code);
+        Assertions.assertEquals("我的微信店铺", shopInResponse.getData().getName());
+
+
 
         Goods goods = new Goods();
         goods.setName("肥皂");
@@ -50,23 +67,23 @@ public class GoodsIntegrationTest extends AbstractIntegrationTest {
         goods.setImgUrl("https://img.url");
         goods.setPrice(500L);
         goods.setStock(10);
-        goods.setShopId(12345L);
+        goods.setShopId(shopInResponse.getData().getId());
 
         HttpResponse response = doHttpRequest("/api/v1/goods",
                 false,
                 goods,
-                cookie);
+                userLoginResponse.cookie);
 
-        Response<Goods> responseData = objectMapper.readValue(response.body, new TypeReference<Response<Goods>>() {
+        Response<Goods> goodsInResponse = objectMapper.readValue(response.body, new TypeReference<Response<Goods>>() {
         });
 
         Assertions.assertEquals(SC_CREATED, response.code);
-        Assertions.assertEquals("肥皂", responseData.getData().getName());
+        Assertions.assertEquals("肥皂", goodsInResponse.getData().getName());
 
     }
 
     @Test
-    public void testDeleteGoods() {
+    public void deleteGoodsFailedIfGoodsNotExist() {
 
     }
 }

@@ -4,12 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.kevinsawicki.http.HttpRequest;
 import com.xiaowei.entity.LoginResponse;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.configuration.ClassicConfiguration;
+import com.xiaowei.entity.User;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
 import org.springframework.http.MediaType;
 
@@ -37,24 +34,38 @@ public class AbstractIntegrationTest {
         }
     }
 
-    public String loginAndGetCookie() throws JsonProcessingException {
+    public UserLoginResponse loginAndGetCookie() throws JsonProcessingException {
         //默认情况下访问/api/status处于未登录状态
         String statusResponse = doHttpRequest("/api/status", true, null, null).body;
 
-        LoginResponse response = objectMapper.readValue(statusResponse, LoginResponse.class);
-        Assertions.assertFalse(response.isLogin());
+        LoginResponse statusResponseData = objectMapper.readValue(statusResponse, LoginResponse.class);
+        Assertions.assertFalse(statusResponseData.isLogin());
 
         //发送验证码
         int responseCode = doHttpRequest("/api/code", false, VALID_PARAMETER, null).code;
         Assertions.assertEquals(HTTP_OK, responseCode);
 
         //带着验证码登录，得到cookie
-        Map<String, List<String>> responseHeaders = doHttpRequest("/api/login", false, VALID_PARAMETER_CODE, null).headers;
-        List<String> setCookie = responseHeaders.get("Set-Cookie");
-        return getSessionIdFromSetCookie(setCookie.stream()
-                .filter(cookie -> cookie.contains("JSESSIONID"))
+        HttpResponse loginResponse = doHttpRequest("/api/login", false, VALID_PARAMETER_CODE, null);
+        List<String> setCookie = loginResponse.headers.get("Set-Cookie");
+        String cookie = getSessionIdFromSetCookie(setCookie.stream()
+                .filter(c -> c.contains("JSESSIONID"))
                 .findFirst()
                 .get());
+        statusResponse = doHttpRequest("/api/status", false, null, cookie).body;
+        statusResponseData = objectMapper.readValue(statusResponse, LoginResponse.class);
+
+        return new UserLoginResponse(cookie, statusResponseData.getUser());
+    }
+
+    public static class UserLoginResponse {
+        String cookie;
+        User user;
+
+        public UserLoginResponse(String cookie, User user) {
+            this.cookie = cookie;
+            this.user = user;
+        }
     }
 
     public HttpResponse doHttpRequest(String apiName, boolean isGet, Object requestBody, String cookie) throws JsonProcessingException {

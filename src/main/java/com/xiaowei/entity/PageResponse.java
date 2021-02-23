@@ -1,5 +1,7 @@
 package com.xiaowei.entity;
 
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 public class PageResponse<T> {
@@ -7,6 +9,16 @@ public class PageResponse<T> {
     private int pageSize;
     private int totalPage;
     private List<T> data;
+
+    public static void main(String[] args) {
+        Integer[] arr={1,2,3};
+        Arrays.sort(arr,new Comparator<Integer>(){
+            public int compare(Integer o1, Integer o2) {
+                return o2-o1;
+            }
+        });
+        Arrays.stream(arr).forEach(e-> System.out.println(e));
+    }
 
     public PageResponse() {
 

@@ -49,7 +49,7 @@ class GoodsServiceTest {
         when(shop.getOwnerUserId()).thenReturn(1L);
         when(goodsMapper.insert(goods)).thenReturn(123);
 
-        Assertions.assertEquals(goods,goodsService.createGoods(goods));
+        Assertions.assertEquals(goods, goodsService.createGoods(goods));
 
         verify(goods).setId(123L);
     }
@@ -58,9 +58,10 @@ class GoodsServiceTest {
     public void createGoodsFailedIfUserIsNotOwner() {
         when(shop.getOwnerUserId()).thenReturn(2L);
 
-        Assertions.assertThrows(GoodsService.NotAuthorizedForShopException.class,()->{
+        HttpException httpException = Assertions.assertThrows(HttpException.class, () -> {
             goodsService.createGoods(goods);
         });
+        Assertions.assertEquals(403, httpException.getStatusCode());
     }
 
     @Test
@@ -69,18 +70,20 @@ class GoodsServiceTest {
         when(shop.getOwnerUserId()).thenReturn(1L);
         when(goodsMapper.selectByPrimaryKey(goodsToBeDeleted)).thenReturn(null);
 
-        Assertions.assertThrows(GoodsService.ResourceNotFoundException.class,()->{
+        HttpException httpException = Assertions.assertThrows(HttpException.class, () -> {
             goodsService.deleteGoodsById(goodsToBeDeleted);
         });
+        Assertions.assertEquals(404, httpException.getStatusCode());
     }
 
     @Test
     public void deleteGoodsThrowExceptionIfUserIsNotOwner() {
         when(shop.getOwnerUserId()).thenReturn(2L);
 
-        Assertions.assertThrows(GoodsService.NotAuthorizedForShopException.class,()->{
+        HttpException httpException = Assertions.assertThrows(HttpException.class, () -> {
             goodsService.deleteGoodsById(anyLong());
         });
+        Assertions.assertEquals(403, httpException.getStatusCode());
     }
 
     @Test
@@ -95,25 +98,25 @@ class GoodsServiceTest {
 
     @Test
     public void getGoodsSuccessedWithNullShopId() {
-        int pageNum=5;
-        int pageSize=10;
-        List<Goods> mockData=mock(List.class);
+        int pageNum = 5;
+        int pageSize = 10;
+        List<Goods> mockData = mock(List.class);
 
         when(goodsMapper.countByExample(any())).thenReturn(55L);
         when(goodsMapper.selectByExample(any())).thenReturn(mockData);
         PageResponse<Goods> result = goodsService.getGoods(pageNum, pageSize, null);
 
-        Assertions.assertEquals(6,result.getTotalPage());
-        Assertions.assertEquals(5,result.getPageNum());
-        Assertions.assertEquals(10,result.getPageSize());
-        Assertions.assertEquals(mockData,result.getData());
+        Assertions.assertEquals(6, result.getTotalPage());
+        Assertions.assertEquals(5, result.getPageNum());
+        Assertions.assertEquals(10, result.getPageSize());
+        Assertions.assertEquals(mockData, result.getData());
     }
 
     @Test
     public void updateGoodsSuccessed() {
         when(shop.getOwnerUserId()).thenReturn(1L);
-        when(goodsMapper.updateByExample(any(),any())).thenReturn(1);
+        when(goodsMapper.updateByExample(any(), any())).thenReturn(1);
 
-        Assertions.assertEquals(goods,goodsService.updateGoods(goods));
+        Assertions.assertEquals(goods, goodsService.updateGoods(goods));
     }
 }
